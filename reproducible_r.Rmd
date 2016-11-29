@@ -1,0 +1,52 @@
+---
+title: "Writing reproducible code in R"
+output: html_notebook
+---
+
+Read Iris data into workspace
+
+```{r}
+library(RCurl)
+iris <- read.csv(text=getURL("https://raw.githubusercontent.com/BES2016Workshop/reproduciblecodeR/master/iris.csv"))
+```
+
+Tidy up the iris data using the `gather()`, `separate()` and `spread()` functions. 
+
+```{r}
+library(tidyr)
+iris_tidy <- gather(iris, species, value, -measurement) %>%
+  separate(measurement, c("sample", "measurement"), sep="_") %>%
+  spread(measurement, value)
+```
+
+Note that I have used the `%>%` pipe operator, which is explained in the 'Manipulating and summarising data' section. 
+
+Summarise the data using `group_by()` `select()` and `summarise_each()` to get mean and sd of each measurement, grouped by species. 
+
+```{r}
+library(dplyr)
+iris_summary <- group_by(iris_tidy, species) %>%
+  select(-sample) %>% # we are not interested in sample
+  summarise_each(c("mean", "sd"))
+```
+
+Using the `lm()` and `tidy()` functions, fit a linear model relating petal length to petal width and output the table of coefficients.
+
+```{r}
+lmfit <- lm(Petal.Length ~ Petal.Width, data = iris_tidy)
+library(broom)
+tidy(lmfit)
+```
+
+Use `ggplot()` to create a plot of the above linear model, coloured by species.
+
+```{r}
+library(ggplot2)
+library(cowplot)
+
+p <- ggplot(iris_tidy, aes(x = Petal.Width, y = Petal.Length, colour = species)) + 
+  geom_point()
+
+p
+```
+
